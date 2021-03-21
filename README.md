@@ -40,6 +40,8 @@ If you don't have conda installed, please install it following the instructions 
 
 ```conda env create -f environment.yml```
 
+Then install ```torch_geometric``` following the instructions [here](https://pytorch-geometric.readthedocs.io/en/latest/notes/installation.html) and ```ogb``` following the instructions [here](https://ogb.stanford.edu/docs/home/).
+
 ### 2.2 Installation with pip
 
 Alternatively, if you prefer to install dependencies with pip, please follow the instructions below:
@@ -114,7 +116,7 @@ optional arguments:
                         HNN, GCN, GAT, HGCN]
   --dim DIM             embedding dimension
   --manifold MANIFOLD   which manifold to use, can be any of [Euclidean,
-                        Hyperboloid, PoincareBall]
+                        Hyperboloid, PoincareBall, MixedCurvature]
   --c C                 hyperbolic radius, set to None for trainable curvature
   --r R                 fermi-dirac decoder parameter for lp
   --t T                 fermi-dirac decoder parameter for lp
@@ -147,6 +149,8 @@ optional arguments:
                         whether to row-normalize the adjacency matrix
   --split-seed SPLIT_SEED
                         seed for data splits (train/test/val)
+  --split-idx
+                        which index to split a mixed curvature embedding space 
 ```
 
 ## 4. Examples
@@ -184,6 +188,10 @@ To train train a HGCN node classification model on Cora and Pubmed datasets, pre
   * Disease (Test accuracy: 76.77):
 
 ```python train.py --task nc --dataset disease_nc --model HGCN --dim 16 --lr 0.01 --dim 16 --num-layers 2 --act relu --bias 1 --dropout 0 --weight-decay 0 --manifold PoincareBall --log-freq 5 --cuda 0```
+
+  * ```ogbn-arxiv```(Test accuracy: 63.43)
+
+```python train.py --task nc --dataset arxiv --model HGCN --dim 16 --lr 0.01 --num-layers 2 --act relu --bias 1 --dropout 0 --weight-decay 0 --manifold MixedCurvature --split-idx 8 --log-freq 5 --cuda 0 --save 1```
 
 ### 4.2 Train other graph embedding models
 
