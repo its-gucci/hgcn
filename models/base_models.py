@@ -28,7 +28,10 @@ class BaseModel(nn.Module):
                 self.c = self.c.to(args.device)
         else:
             self.c = nn.Parameter(torch.Tensor([1.]))
-        self.manifold = getattr(manifolds, self.manifold_name)()
+        if self.manifold_name == 'MixedCurvature':
+            self.manifold = getattr(manifolds, self.manifold_name)(args.split_idx)
+        else:
+            self.manifold = getattr(manifolds, self.manifold_name)()
         if self.manifold.name == 'Hyperboloid':
             args.feat_dim = args.feat_dim + 1
         self.nnodes = args.n_nodes
@@ -77,7 +80,7 @@ class NCModel(BaseModel):
     def compute_metrics(self, embeddings, data, split):
         idx = data[f'idx_{split}']
         output = self.decode(embeddings, data['adj_train_norm'], idx)
-        loss = F.nll_loss(output, data['labels'][idx], self.weights)
+        loss = F.nll_loss(output, data['labels'][idx].squeeze(), self.weights)
         acc, f1 = acc_f1(output, data['labels'][idx], average=self.f1_average)
         metrics = {'loss': loss, 'acc': acc, 'f1': f1}
         return metrics
@@ -103,6 +106,8 @@ class LPModel(BaseModel):
     def decode(self, h, idx):
         if self.manifold_name == 'Euclidean':
             h = self.manifold.normalize(h)
+        elif self.manifold_name == 'MixedCurvature':
+            h[..., :self.manifold.idx] = self.manifold.Euc.normalize(h[..., :self.manifold.idx])
         emb_in = h[idx[:, 0], :]
         emb_out = h[idx[:, 1], :]
         sqdist = self.manifold.sqdist(emb_in, emb_out, self.c)

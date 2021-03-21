@@ -97,7 +97,10 @@ class HGCN(Encoder):
 
     def __init__(self, c, args):
         super(HGCN, self).__init__(c)
-        self.manifold = getattr(manifolds, args.manifold)()
+        if args.manifold == 'MixedCurvature':
+            self.manifold = getattr(manifolds, args.manifold)(args.split_idx)
+        else:
+            self.manifold = getattr(manifolds, args.manifold)()
         assert args.num_layers > 1
         dims, acts, self.curvatures = hyp_layers.get_dim_act_curv(args)
         self.curvatures.append(self.c)
@@ -115,9 +118,14 @@ class HGCN(Encoder):
         self.encode_graph = True
 
     def encode(self, x, adj):
-        x_tan = self.manifold.proj_tan0(x, self.curvatures[0])
-        x_hyp = self.manifold.expmap0(x_tan, c=self.curvatures[0])
-        x_hyp = self.manifold.proj(x_hyp, c=self.curvatures[0])
+        if self.manifold.name == 'MixedCurvature':
+            x_tan = self.manifold.Hyp.proj_tan0(x, self.curvatures[0])
+            x_hyp = self.manifold.Hyp.expmap0(x_tan, c=self.curvatures[0])
+            x_hyp = self.manifold.Hyp.proj(x_hyp, c=self.curvatures[0])
+        else:
+            x_tan = self.manifold.proj_tan0(x, self.curvatures[0])
+            x_hyp = self.manifold.expmap0(x_tan, c=self.curvatures[0])
+            x_hyp = self.manifold.proj(x_hyp, c=self.curvatures[0])
         return super(HGCN, self).encode(x_hyp, adj)
 
 

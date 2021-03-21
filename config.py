@@ -28,7 +28,7 @@ config_args = {
         'task': ('nc', 'which tasks to train on, can be any of [lp, nc]'),
         'model': ('GCN', 'which encoder to use, can be any of [Shallow, MLP, HNN, GCN, GAT, HyperGCN]'),
         'dim': (128, 'embedding dimension'),
-        'manifold': ('Euclidean', 'which manifold to use, can be any of [Euclidean, Hyperboloid, PoincareBall]'),
+        'manifold': ('Euclidean', 'which manifold to use, can be any of [Euclidean, Hyperboloid, PoincareBall, MixedCurvature]'),
         'c': (1.0, 'hyperbolic radius, set to None for trainable curvature'),
         'r': (2., 'fermi-dirac decoder parameter for lp'),
         't': (1., 'fermi-dirac decoder parameter for lp'),
@@ -41,7 +41,8 @@ config_args = {
         'alpha': (0.2, 'alpha for leakyrelu in graph attention networks'),
         'double-precision': ('0', 'whether to use double precision'),
         'use-att': (0, 'whether to use hyperbolic attention or not'),
-        'local-agg': (0, 'whether to local tangent space aggregation or not')
+        'local-agg': (0, 'whether to local tangent space aggregation or not'),
+        'split-idx': (8, 'where to split Euclidean/Hyperbolic indices for MixedCurvature manifold'),
     },
     'data_config': {
         'dataset': ('cora', 'which dataset to use'),

@@ -8,9 +8,28 @@ import numpy as np
 import scipy.sparse as sp
 import torch
 
+from ogb.nodeproppred import PygNodePropPredDataset
+from torch_geometric.utils.convert import to_scipy_sparse_matrix
+from torch_geometric.utils import subgraph, negative_sampling
 
 def load_data(args, datapath):
-    if args.task == 'nc':
+    if args.dataset in ['arxiv'] and args.task == 'lp':
+        data = {}
+        dataset = PygNodePropPredDataset(name='ogbn-{}'.format(args.dataset), root='/pasteur/u/jeffgu/hgcn/data')
+        split_idx = dataset.get_idx_split()
+        train_idx, valid_idx, test_idx = split_idx["train"], split_idx["valid"], split_idx["test"] 
+        induced_edges_train, _ = subgraph(train_idx, dataset[0].edge_index)
+        induced_edges_valid, _ = subgraph(valid_idx, dataset[0].edge_index)
+        induced_edges_test, _ = subgraph(test_idx, dataset[0].edge_index)
+        neg_edges_train = negative_sampling(induced_edges_train)
+        neg_edges_valid = negative_sampling(induced_edges_valid)
+        neg_edges_test = negative_sampling(induced_edges_test)
+        data['adj_train'] = to_scipy_sparse_matrix(dataset[0].edge_index).tocsr()
+        data['features'] = dataset[0].x
+        data['train_edges'], data['train_edges_false'] = induced_edges_train, neg_edges_train
+        data['val_edges'], data['val_edges_false'] = induced_edges_valid, neg_edges_valid
+        data['test_edges'], data['test_edges_false'] = induced_edges_test, neg_edges_test
+    elif args.task == 'nc':
         data = load_data_nc(args.dataset, args.use_feats, datapath, args.split_seed)
     else:
         data = load_data_lp(args.dataset, args.use_feats, datapath)
@@ -151,6 +170,13 @@ def load_data_nc(dataset, use_feats, data_path, split_seed):
         adj, features, labels, idx_train, idx_val, idx_test = load_citation_data(
             dataset, use_feats, data_path, split_seed
         )
+    elif dataset == 'arxiv':
+        dataset = PygNodePropPredDataset(name='ogbn-arxiv', root='/pasteur/u/jeffgu/hgcn/data')
+        split_idx = dataset.get_idx_split()
+        idx_train, idx_val, idx_test = split_idx["train"], split_idx["valid"], split_idx["test"] 
+        adj = to_scipy_sparse_matrix(dataset[0].edge_index).tocsr()
+        features = dataset[0].x
+        labels = dataset[0].y
     else:
         if dataset == 'disease_nc':
             adj, features, labels = load_synthetic_data(dataset, use_feats, data_path)
